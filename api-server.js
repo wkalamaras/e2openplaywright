@@ -1,6 +1,7 @@
 // E2Open TMS Automation API Server - Updated 2025-08-27
 const express = require('express');
-const { chromium } = require('playwright');
+// Lazy load playwright only when needed
+// const { chromium } = require('playwright');
 const fs = require('fs').promises;
 const path = require('path');
 
