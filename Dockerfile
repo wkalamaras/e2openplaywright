@@ -1,6 +1,6 @@
 # Use official Playwright image with browsers pre-installed
 # Build timestamp: 2025-08-27
-FROM mcr.microsoft.com/playwright:v1.40.0-focal
+FROM mcr.microsoft.com/playwright:v1.55.0-focal
 
 # Set working directory
 WORKDIR /app
