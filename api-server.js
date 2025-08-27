@@ -3,16 +3,13 @@ const express = require('express');
 const { chromium } = require('playwright');
 const fs = require('fs').promises;
 const path = require('path');
-require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3952;
 
-console.log('[STARTUP] Environment variables:');
-console.log('[STARTUP] PORT from env:', process.env.PORT);
-console.log('[STARTUP] PORT variable:', PORT);
-console.log('[STARTUP] NODE_ENV:', process.env.NODE_ENV);
-console.log('[STARTUP] All env vars:', Object.keys(process.env).filter(key => key.includes('PORT')));
+console.log('[STARTUP] Starting E2Open API Server...');
+console.log('[STARTUP] PORT:', PORT);
+console.log('[STARTUP] NODE_ENV:', process.env.NODE_ENV || 'development');
 
 // Global browser session management
 let browserSession = {
@@ -604,28 +601,44 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log('='.repeat(60));
-  console.log('E2Open Automation API Server');
-  console.log('='.repeat(60));
-  console.log(`Port: ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Headless: ${process.env.HEADLESS || 'true'}`);
-  console.log(`Session timeout: ${SESSION_TIMEOUT / 1000 / 60} minutes`);
-  console.log('-'.repeat(60));
-  console.log('Endpoints:');
-  console.log(`  GET  /health                - Health check & session status`);
-  console.log(`  GET  /api/session           - Check browser session`);
-  console.log(`  POST /api/session/reset     - Force new session`);
-  console.log(`  POST /api/automation        - Run automation`);
-  console.log(`  GET  /api/downloads         - List downloaded PDFs`);
-  console.log(`  GET  /api/download/:file    - Download specific PDF`);
-  console.log('-'.repeat(60));
-  console.log('Required headers for automation:');
-  console.log(`  x-action: printloadconfirmation`);
-  console.log(`  x-load-number: <load number>`);
-  console.log('='.repeat(60));
+// Start server with error handling
+try {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log('='.repeat(60));
+    console.log('E2Open Automation API Server');
+    console.log('='.repeat(60));
+    console.log(`Port: ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Headless: ${process.env.HEADLESS || 'true'}`);
+    console.log(`Session timeout: ${SESSION_TIMEOUT / 1000 / 60} minutes`);
+    console.log('-'.repeat(60));
+    console.log('Endpoints:');
+    console.log(`  GET  /health                - Health check & session status`);
+    console.log(`  GET  /api/session           - Check browser session`);
+    console.log(`  POST /api/session/reset     - Force new session`);
+    console.log(`  POST /api/automation        - Run automation`);
+    console.log(`  GET  /api/downloads         - List downloaded PDFs`);
+    console.log(`  GET  /api/download/:file    - Download specific PDF`);
+    console.log('-'.repeat(60));
+    console.log('Required headers for automation:');
+    console.log(`  x-action: printloadconfirmation`);
+    console.log(`  x-load-number: <load number>`);
+    console.log('='.repeat(60));
+  });
+} catch (error) {
+  console.error('[FATAL] Failed to start server:', error);
+  process.exit(1);
+}
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('[FATAL] Uncaught exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[FATAL] Unhandled rejection at:', promise, 'reason:', reason);
+  process.exit(1);
 });
 
 module.exports = app;
