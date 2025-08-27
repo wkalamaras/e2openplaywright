@@ -27,10 +27,12 @@ const SESSION_TIMEOUT = 30 * 60 * 1000;
 
 app.use(express.json());
 
-// Middleware to log requests
+// Middleware to log requests (excluding health checks)
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
-  console.log('Headers:', req.headers);
+  if (req.path !== '/health') {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+    console.log('Headers:', req.headers);
+  }
   next();
 });
 
