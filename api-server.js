@@ -61,11 +61,15 @@ app.post('/api/session/reset', async (req, res) => {
 
 // Main automation endpoint
 app.post('/api/automation', async (req, res) => {
+  console.log(`[REQUEST] Received POST /api/automation at ${new Date().toISOString()}`);
+  console.log(`[REQUEST] Headers:`, req.headers);
+  
   // Get action and parameters from headers
   const action = req.headers['x-action'] || req.headers.action;
   const loadNumber = req.headers['x-load-number'] || req.headers.load || req.body.loadNumber;
   
-  console.log(`[AUTOMATION] Processing action: ${action}, Load: ${loadNumber}`);
+  console.log(`[AUTOMATION] Processing action: '${action}' for Load: '${loadNumber}'`);
+  console.log(`[AUTOMATION] Starting automation process...`);
   
   // Validate required parameters
   if (!action) {
@@ -87,8 +91,10 @@ app.post('/api/automation', async (req, res) => {
       }
       
       try {
+        console.log(`[AUTOMATION] Initiating load confirmation for load ${loadNumber}`);
         const pdfPath = await executeLoadConfirmation(loadNumber);
         
+        console.log(`[PDF] Reading PDF file from: ${pdfPath}`);
         // Read the PDF file
         const pdfBuffer = await fs.readFile(pdfPath);
         
@@ -106,6 +112,7 @@ app.post('/api/automation', async (req, res) => {
           'Content-Length': pdfBuffer.length
         });
         
+        console.log(`[RESPONSE] Sending PDF as binary (${pdfBuffer.length} bytes) with filename: ${responseFilename}`);
         // Send PDF as binary response
         res.send(pdfBuffer);
         
@@ -330,19 +337,26 @@ async function performLogin() {
 async function executeLoadConfirmation(loadNumber) {
   const pdfSavePath = process.env.PDF_SAVE_PATH || '/app/temp';
   
-  console.log(`[AUTOMATION] Starting load confirmation for: ${loadNumber}`);
+  console.log(`[PROCESS] ========== STARTING LOAD CONFIRMATION PROCESS ==========`);
+  console.log(`[PROCESS] Load Number: ${loadNumber}`);
+  console.log(`[PROCESS] PDF Save Path: ${pdfSavePath}`);
+  console.log(`[PROCESS] Timestamp: ${new Date().toISOString()}`);
   
   // Ensure downloads directory exists
+  console.log(`[FILESYSTEM] Ensuring directory exists: ${pdfSavePath}`);
   await fs.mkdir(pdfSavePath, { recursive: true });
   
   // Initialize or reuse browser session
+  console.log(`[SESSION] Checking for existing browser session...`);
   const sessionStatus = await initializeBrowserSession();
   
   if (!sessionStatus.active || !sessionStatus.loggedIn) {
     throw new Error('Failed to establish logged-in session');
   }
   
-  console.log(`[AUTOMATION] Using session: ${browserSession.sessionId}`);
+  console.log(`[SESSION] ✓ Using active session ID: ${browserSession.sessionId}`);
+  console.log(`[SESSION] Session logged in: ${sessionStatus.loggedIn}`);
+  console.log(`[SESSION] Session last activity: ${new Date(browserSession.lastActivity).toISOString()}`);
   
   try {
     // Navigate to main page if not already there
@@ -354,17 +368,21 @@ async function executeLoadConfirmation(loadNumber) {
     }
     
     // Search for load number
-    console.log(`[AUTOMATION] Searching for load: ${loadNumber}`);
+    console.log(`[SEARCH] Starting search for load: ${loadNumber}`);
     
     // Clear and fill search field
     const searchField = browserSession.page.locator('#menu-search-input');
+    console.log(`[SEARCH] Clearing search field...`);
     await searchField.clear();
+    console.log(`[SEARCH] Entering load number: ${loadNumber}`);
     await searchField.fill(loadNumber);
+    console.log(`[SEARCH] Pressing Enter to search...`);
     await searchField.press('Enter');
     
-    console.log('[AUTOMATION] Waiting for search results...');
+    console.log('[SEARCH] Waiting for search results to load...');
     await browserSession.page.waitForLoadState('networkidle');
     await browserSession.page.waitForTimeout(2000); // Give extra time for popup
+    console.log('[SEARCH] Search completed, checking for results...');
     
     // Wait for Load Report page to open
     let loadReportPage = null;
@@ -433,8 +451,10 @@ async function executeLoadConfirmation(loadNumber) {
     }
     
     // Generate PDF
+    console.log('[PDF] Preparing to generate PDF from Load Report page...');
     await loadReportPage.bringToFront();
     await loadReportPage.waitForLoadState('networkidle');
+    console.log('[PDF] Page loaded and ready for PDF generation');
     
     const today = new Date();
     const dateStr = String(today.getMonth() + 1).padStart(2, '0') + '.' + 
@@ -443,7 +463,9 @@ async function executeLoadConfirmation(loadNumber) {
     const pdfFilename = `RATECON MULDER BROTHERS ${loadNumber} ${dateStr}.pdf`;
     const pdfPath = path.join(pdfSavePath, pdfFilename);
     
-    console.log(`[AUTOMATION] Generating PDF: ${pdfFilename}`);
+    console.log(`[PDF] Generating PDF with filename: ${pdfFilename}`);
+    console.log(`[PDF] Full path: ${pdfPath}`);
+    console.log(`[PDF] Starting PDF generation...`);
     
     await loadReportPage.pdf({
       path: pdfPath,
@@ -457,19 +479,26 @@ async function executeLoadConfirmation(loadNumber) {
       }
     });
     
-    console.log(`[AUTOMATION] ✓ PDF saved: ${pdfPath}`);
+    console.log(`[PDF] ✓ PDF generation complete!`);
+    console.log(`[PDF] File size will be checked when reading...`);
     
     // Close the Load Report tab but keep main session
+    console.log('[SESSION] Closing Load Report tab...');
     await loadReportPage.close();
-    console.log('[AUTOMATION] Closed Load Report tab, keeping main session active');
+    console.log('[SESSION] Load Report tab closed, main session remains active');
     
     // Update last activity
     browserSession.lastActivity = Date.now();
+    console.log(`[SESSION] Updated last activity: ${new Date(browserSession.lastActivity).toISOString()}`);
+    
+    console.log(`[PROCESS] ========== LOAD CONFIRMATION COMPLETE ==========`);
+    console.log(`[PROCESS] Returning PDF path: ${pdfPath}`);
     
     return pdfPath;
     
   } catch (error) {
-    console.error('[AUTOMATION] Error:', error);
+    console.error('[ERROR] Automation failed:', error.message);
+    console.error('[ERROR] Stack trace:', error.stack);
     throw error;
   }
 }

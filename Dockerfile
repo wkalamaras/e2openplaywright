@@ -4,11 +4,24 @@ FROM mcr.microsoft.com/playwright:v1.40.0-focal
 # Set working directory
 WORKDIR /app
 
-# Install Node.js dependencies first (for better caching)
-COPY package*.json ./
-RUN npm ci --only=production
+# Copy ONLY package files first for dependency caching
+# This layer will be cached unless package.json changes
+COPY package.json package-lock.json ./
 
-# Copy application files
+# Install curl for health checks and dependencies
+RUN apt-get update && \
+    apt-get install -y curl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install dependencies - this will be cached if package files don't change
+RUN npm ci --only=production && \
+    npm cache clean --force && \
+    # Install Playwright browsers if needed (they should be in the base image)
+    npx playwright install-deps chromium || true
+
+# Copy application files AFTER dependencies
+# This way, code changes don't invalidate the dependency cache
 COPY *.js ./
 
 # Create temp directory for PDF storage with proper permissions
