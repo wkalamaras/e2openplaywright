@@ -8,6 +8,12 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3952;
 
+console.log('[STARTUP] Environment variables:');
+console.log('[STARTUP] PORT from env:', process.env.PORT);
+console.log('[STARTUP] PORT variable:', PORT);
+console.log('[STARTUP] NODE_ENV:', process.env.NODE_ENV);
+console.log('[STARTUP] All env vars:', Object.keys(process.env).filter(key => key.includes('PORT')));
+
 // Global browser session management
 let browserSession = {
   browser: null,

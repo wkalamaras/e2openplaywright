@@ -48,9 +48,9 @@ ENV OPEN_PDF_AFTER_SAVE=false
 # Expose port
 EXPOSE 3952
 
-# Add health check
+# Add health check using curl
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3952/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }).on('error', () => { process.exit(1); })"
+  CMD curl -f http://localhost:3952/health || exit 1
 
 # Run as non-root user for security
 RUN groupadd -r appuser && useradd -r -g appuser appuser && \
