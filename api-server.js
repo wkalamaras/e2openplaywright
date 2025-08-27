@@ -37,7 +37,7 @@ app.use((req, res, next) => {
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
-  const sessionStatus = await checkBrowserSession();
+  const sessionStatus = await checkBrowserSession(true); // true = silent mode
   res.json({ 
     status: 'healthy', 
     timestamp: new Date().toISOString(),
@@ -156,7 +156,7 @@ app.post('/api/automation', async (req, res) => {
 });
 
 // Check browser session status
-async function checkBrowserSession() {
+async function checkBrowserSession(silent = false) {
   const now = Date.now();
   const isActive = browserSession.browser && 
                    browserSession.context && 
@@ -169,10 +169,12 @@ async function checkBrowserSession() {
     // Verify the session is still valid
     try {
       await browserSession.page.evaluate(() => document.title);
-      console.log('[SESSION] Browser session is active and valid');
+      if (!silent) {
+        console.log('[SESSION] Browser session is active and valid');
+      }
       
       // Check if still logged in
-      const loggedIn = await verifyLogin();
+      const loggedIn = await verifyLogin(silent);
       
       return {
         active: true,
@@ -182,7 +184,9 @@ async function checkBrowserSession() {
         uptime: now - browserSession.lastActivity
       };
     } catch (error) {
-      console.log('[SESSION] Browser session is invalid, will reinitialize');
+      if (!silent) {
+        console.log('[SESSION] Browser session is invalid, will reinitialize');
+      }
       await closeBrowserSession();
       return { active: false, loggedIn: false, error: 'Session invalid' };
     }
@@ -197,7 +201,7 @@ async function checkBrowserSession() {
 }
 
 // Verify if still logged in
-async function verifyLogin() {
+async function verifyLogin(silent = false) {
   if (!browserSession.page) return false;
   
   try {
@@ -206,25 +210,33 @@ async function verifyLogin() {
     const userElement = await browserSession.page.locator(`text=${username.toUpperCase()}`).count();
     
     if (userElement > 0) {
-      console.log('[AUTH] User is logged in');
+      if (!silent) {
+        console.log('[AUTH] User is logged in');
+      }
       return true;
     }
     
     // Check if on login page
     const loginForm = await browserSession.page.locator('#userSubmit').count();
     if (loginForm > 0) {
-      console.log('[AUTH] On login page - not logged in');
+      if (!silent) {
+        console.log('[AUTH] On login page - not logged in');
+      }
       return false;
     }
     
     // Check URL for login indicators
     const url = browserSession.page.url();
     if (url.includes('/login') || url.includes('security')) {
-      console.log('[AUTH] URL indicates login page');
+      if (!silent) {
+        console.log('[AUTH] URL indicates login page');
+      }
       return false;
     }
     
-    console.log('[AUTH] Login status uncertain, assuming logged in');
+    if (!silent) {
+      console.log('[AUTH] Login status uncertain, assuming logged in');
+    }
     return true;
     
   } catch (error) {
