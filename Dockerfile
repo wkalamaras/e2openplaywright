@@ -58,5 +58,5 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser && \
     chown -R appuser:appuser /app/temp
 USER appuser
 
-# Start the API server
-CMD ["node", "api-server.js"]
+# Start the test server for debugging
+CMD ["node", "test-server.js"]
