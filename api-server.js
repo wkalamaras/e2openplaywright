@@ -118,7 +118,9 @@ app.post('/api/automation', async (req, res) => {
         res.set({
           'Content-Type': 'application/pdf',
           'Content-Disposition': `attachment; filename="${responseFilename}"`,
-          'Content-Length': pdfBuffer.length
+          'Content-Length': pdfBuffer.length,
+          'X-Filename': responseFilename,
+          'X-Load-Number': loadNumber
         });
         
         // Send PDF as binary response
