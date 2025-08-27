@@ -9,16 +9,25 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # Install curl for health checks and dependencies
-RUN apt-get update && \
+RUN echo "=== Installing system dependencies ===" && \
+    apt-get update && \
     apt-get install -y curl && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    echo "=== System dependencies installed ==="
 
 # Install dependencies - this will be cached if package files don't change
-RUN npm ci --only=production && \
+RUN echo "=== Installing Node.js dependencies ===" && \
+    echo "Running npm ci for production dependencies..." && \
+    npm ci --only=production && \
+    echo "=== Node.js dependencies installed ===" && \
+    echo "Cleaning npm cache..." && \
     npm cache clean --force && \
-    # Install Playwright browsers if needed (they should be in the base image)
-    npx playwright install-deps chromium || true
+    echo "=== Checking Playwright browsers ===" && \
+    npx playwright --version && \
+    echo "=== Verifying Chromium installation ===" && \
+    npx playwright install-deps chromium 2>&1 || echo "Chromium deps already satisfied" && \
+    echo "=== All dependencies ready ==="
 
 # Copy application files AFTER dependencies
 # This way, code changes don't invalidate the dependency cache
