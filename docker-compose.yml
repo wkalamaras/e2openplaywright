@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  e2open-automation:
+    build: .
+    container_name: e2open-playwright
+    ports:
+      - "3952:3952"
+    environment:
+      # These will be set in Coolify's environment variables
+      - TMS_USERNAME=${TMS_USERNAME}
+      - TMS_PASSWORD=${TMS_PASSWORD}
+      - PDF_SAVE_PATH=/app/temp
+      - OPEN_PDF_AFTER_SAVE=false
+      - HEADLESS=true
+      - PORT=3952
+    volumes:
+      # Mount persistent storage for temporary PDFs
+      # In Coolify, this will be configured as persistent storage
+      - pdf-temp:/app/temp
+    restart: unless-stopped
+
+volumes:
+  pdf-temp:
+    driver: local

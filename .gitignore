@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.*
+!.env.example
+*.pdf
+downloads/
+temp/
+.DS_Store
+npm-debug.log*

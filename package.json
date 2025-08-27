@@ -1,0 +1,26 @@
+{
+  "name": "e2open-playwright",
+  "version": "1.0.0",
+  "description": "Playwright script for E2Open TMS automation",
+  "main": "api-server.js",
+  "scripts": {
+    "start": "node api-server.js",
+    "start:dev": "node api-server.js",
+    "start:script": "node e2open-tms-script.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "playwright",
+    "e2open",
+    "tms",
+    "automation"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "express": "^4.21.2",
+    "node-cron": "^3.0.3",
+    "playwright": "^1.40.0"
+  }
+}
