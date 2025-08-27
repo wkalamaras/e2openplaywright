@@ -111,6 +111,7 @@ app.post('/api/automation', async (req, res) => {
                        String(today.getFullYear()).slice(-2);
         const responseFilename = `RATECON MULDER BROTHERS ${loadNumber} ${dateStr}.pdf`;
         
+        console.log(`[RESPONSE] Generated filename: ${responseFilename}`);
         console.log(`[RESPONSE] Sending JSON response with PDF data (${pdfBuffer.length} bytes) and filename: ${responseFilename}`);
         
         // Send JSON response with PDF data and filename
