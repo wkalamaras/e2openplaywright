@@ -26,6 +26,8 @@ RUN echo "=== Installing Node.js dependencies ===" && \
     npm cache clean --force && \
     echo "=== Checking Playwright browsers ===" && \
     npx playwright --version && \
+    echo "=== Installing Playwright browsers ===" && \
+    npx playwright install chromium && \
     echo "=== Verifying Chromium installation ===" && \
     npx playwright install-deps chromium 2>&1 || echo "Chromium deps already satisfied" && \
     echo "=== All dependencies ready ==="
