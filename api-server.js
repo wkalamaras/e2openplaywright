@@ -111,16 +111,17 @@ app.post('/api/automation', async (req, res) => {
                        String(today.getFullYear()).slice(-2);
         const responseFilename = `RATECON MULDER BROTHERS ${loadNumber} ${dateStr}.pdf`;
         
-        // Set response headers for PDF with proper filename
-        res.set({
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="${responseFilename}"`,
-          'Content-Length': pdfBuffer.length
-        });
+        console.log(`[RESPONSE] Sending JSON response with PDF data (${pdfBuffer.length} bytes) and filename: ${responseFilename}`);
         
-        console.log(`[RESPONSE] Sending PDF as binary (${pdfBuffer.length} bytes) with filename: ${responseFilename}`);
-        // Send PDF as binary response
-        res.send(pdfBuffer);
+        // Send JSON response with PDF data and filename
+        res.json({
+          success: true,
+          filename: responseFilename,
+          fileSize: pdfBuffer.length,
+          loadNumber: loadNumber,
+          timestamp: new Date().toISOString(),
+          pdfData: pdfBuffer.toString('base64')
+        });
         
         // Clean up: Delete the file after response is sent
         res.on('finish', async () => {
