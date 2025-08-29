@@ -1,4 +1,5 @@
 // E2Open TMS Automation API Server - Updated 2025-08-27
+require('dotenv').config();
 const express = require('express');
 const { chromium } = require('playwright');
 const fs = require('fs').promises;
@@ -472,6 +473,52 @@ async function executeLoadConfirmation(loadNumber) {
       throw new Error(`Load Report page not found for load ${loadNumber}. The load may not exist or you may not have access.`);
     }
     
+    // Look for Payable section with expandable + button/details
+    console.log('[PAYABLE] Looking for Payable section with expandable details...');
+    let payableButtonFound = false;
+    
+    try {
+      // Look for the specific rate details folder button
+      const clickResult = await loadReportPage.evaluate(() => {
+        // First try the specific ID for the rate details folder button
+        const rateDetailsButton = document.getElementById('test-ratedetails-folder');
+        if (rateDetailsButton) {
+          rateDetailsButton.click();
+          return { found: true, result: 'Found and clicked test-ratedetails-folder button' };
+        }
+        
+        // Fallback: Look for buttons in rateInfo table with folder icons
+        const rateInfoTables = document.querySelectorAll('table[id*="rateInfotab"]');
+        for (let table of rateInfoTables) {
+          const folderButtons = table.querySelectorAll('button[id*="ratedetails-folder"], button.icon-button');
+          for (let btn of folderButtons) {
+            // Check if this button is in a row containing "PAYABLE"
+            const row = btn.closest('tr');
+            if (row && row.textContent.toUpperCase().includes('PAYABLE')) {
+              btn.click();
+              return { found: true, result: 'Found and clicked Payable details folder button in rateInfo table' };
+            }
+          }
+        }
+        
+        return { found: false, result: 'No rate details folder button found for Payable row' };
+      });
+      
+      payableButtonFound = clickResult.found;
+      console.log(`[PAYABLE] ${clickResult.result}`);
+      
+      if (payableButtonFound) {
+        // Wait a moment for any expansion animation
+        await loadReportPage.waitForTimeout(2000);
+        console.log('[PAYABLE] ✓ Payable details expanded successfully - leaving it expanded');
+      } else {
+        console.log('[PAYABLE] ✗ No Payable expand button found');
+      }
+      
+    } catch (error) {
+      console.log('[PAYABLE] ✗ Error while looking for Payable button:', error.message);
+    }
+
     // Generate PDF
     console.log('[PDF] Preparing to generate PDF from Load Report page...');
     await loadReportPage.bringToFront();
